@@ -1,0 +1,37 @@
+version: '3'
+
+services:
+  common_consul:
+    image: consul:latest
+    container_name: common_consul
+    command: consul agent -dev -log-level=warn -ui -client=0.0.0.0
+    hostname: consul
+    restart: always
+    ports:
+      - "8500:8500"
+    environment:
+      - TZ="Asia/Shanghai"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8500"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+
+  ###################################
+  # Micro web to view and query service from web dashboard
+  comm_microweb:
+    image: ironkit/micro:latest
+    container_name: comm_microweb
+    command: web --address=0.0.0.0:8082
+    restart: always
+    ports:
+      - "8082:8082"
+    environment:
+      - MICRO_REGISTRY=consul
+      - MICRO_REGISTRY_ADDRESS=common_consul
+      - MICRO_CLIENT=grpc
+      - MICRO_SERVER=grpc
+      - MICRO_API_NAMESPACE=go.micro.api
+      - TZ="Asia/Shanghai"
+    links:
+      - common_consul
